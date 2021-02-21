@@ -18,14 +18,14 @@ mesh_wifi_interface()
 {
 # https://wiki.archlinux.org/index.php/Ad-hoc_networking
 frequency=`expr \( $channel \* 5 \) + 2407`
-sudo systemctl stop NetworkManager
-sudo ip link set $wifi_interface down
-sudo ip link set mtu 1532 dev $wifi_interface
-sudo iw $wifi_interface set type ibss
-sudo ip link set $wifi_interface up
-sudo iw $wifi_interface ibss join $ssid $frequency HT20
-sudo batctl if destroy
-sudo batctl if add $wifi_interface
+systemctl stop NetworkManager
+ip link set $wifi_interface down
+ip link set mtu 1532 dev $wifi_interface
+iw $wifi_interface set type ibss
+ip link set $wifi_interface up
+iw $wifi_interface ibss join $ssid $frequency HT20
+batctl if destroy
+batctl if add $wifi_interface
 }
 
 # Client - No interconnection. Get it from BAT0
@@ -33,10 +33,23 @@ client()
 {
 echo "Acting as Client"
 mesh_wifi_interface
-sudo batctl gw_mode client
-sudo ip link set bat0 up
+batctl gw_mode client
+ip link set bat0 up
 
-sudo dhclient bat0
+dhclient bat0
+}
+
+# DNS Masq
+dns_masq()
+{
+# sudo dnsmasq --interface=bat0 --dhcp-option=3,$bat_network --dhcp-range=${bat_network}00,${bat_network}99,255.255.255.0,24h
+echo "No DHCP detected. Starting DNSMasq."
+echo "interface=bat0
+dhcp-option=3,$bat_network
+dhcp-range=${bat_network}00,${bat_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
+#echo "dhcp-option=3,$bat_network" >> /etc/dnsmasq.d/mesh-micro.conf
+#echo "dhcp-range=${bat_network}00,${bat_network}99,255.255.255.0,24h" >> /etc/dnsmasq.d/mesh-micro.conf
+systemctl start dnsmasq.service
 }
 
 # Server - Act as a DHCP Server and forward packets
@@ -44,22 +57,21 @@ server()
 {
 echo "Acting as Server"
 mesh_wifi_interface
-sudo batctl gw_mode server
-sudo ip link set bat0 up
+batctl gw_mode server
+ip link set bat0 up
 
 # IP Tables stuff here
-sudo sysctl -w net.ipv4.ip_forward=1
-sudo iptables -t nat -A POSTROUTING -o $internet_interface -j MASQUERADE
-sudo iptables -A FORWARD -i $internet_interface -o bat0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
-sudo iptables -A FORWARD -i bat0 -o $internet_interface -j ACCEPT
+sysctl -w net.ipv4.ip_forward=1
+iptables -t nat -A POSTROUTING -o $internet_interface -j MASQUERADE
+iptables -A FORWARD -i $internet_interface -o bat0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+iptables -A FORWARD -i bat0 -o $internet_interface -j ACCEPT
 
 # If no dhcp server on bat0... its up to us.
 sleep 5
-if [ `sudo dhclient -v bat0 2>&1 | grep "No working leases" | wc -l` -eq 1 ]; then
-   echo "No DHCP detected. Starting DNSMasq."
-   sudo dhclient -r
-   sudo ip addr add $bat_network/24 dev bat0
-   sudo dnsmasq --interface=bat0 --dhcp-option=3,$bat_network --dhcp-range=${bat_network}00,${bat_network}99,255.255.255.0,24h
+if [ `dhclient -v bat0 2>&1 | grep "No working leases" | wc -l` -eq 1 ]; then
+   dhclient -r
+   ip addr add $bat_network/24 dev bat0
+   dns_masq
 fi
 }
 
