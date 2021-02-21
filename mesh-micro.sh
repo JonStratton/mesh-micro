@@ -41,15 +41,13 @@ dhclient bat0
 }
 
 # DNS Masq
-dns_masq()
-{
-# sudo dnsmasq --interface=bat0 --dhcp-option=3,$mesh_network --dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h
-echo "No DHCP detected. Starting DNSMasq."
-echo "interface=bat0
-dhcp-option=3,$mesh_network
-dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
-systemctl start dnsmasq.service
-}
+#dns_masq()
+#{
+#echo "interface=bat0
+#dhcp-option=3,$mesh_network
+#dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
+#systemctl start dnsmasq.service
+#}
 
 # Server - Act as a DHCP Server and forward packets
 mesh_server()
@@ -68,9 +66,11 @@ iptables -A FORWARD -i bat0 -o $internet_interface -j ACCEPT
 # If no dhcp server on bat0... its up to us.
 sleep 5
 if [ `dhclient -v bat0 2>&1 | grep "No working leases" | wc -l` -eq 1 ]; then
+   echo "No DHCP detected. Starting DNSMasq."
    dhclient -r
    ip addr add $mesh_network/24 dev bat0
-   dns_masq
+   dnsmasq --interface=bat0 --dhcp-option=3,$mesh_network --dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h
+   #dns_masq
 fi
 }
 
@@ -82,6 +82,19 @@ sudo ip link set $wifi_interface down
 
 default_interfaces()
 {
+# Defaults and items from the config
+ssid=my_mesh
+channel=2
+wifi_interface=
+internet_interface=
+mesh_type=
+mesh_network=192.168.200.1
+
+# Exec config file if exists
+if [ -f /etc/mesh-micro.conf ]; then
+   . /etc/mesh-micro.conf
+fi
+
 # Wait for wifi
 while [ -z "$wifi_interface" -o ! -e /sys/class/net/$wifi_interface ]; do
    echo "Sleeping 5 for Wifi Interface $wifi_interface"
@@ -128,7 +141,7 @@ sudo sh -c '( echo "[Unit]
 Description=Mesh Micro Service
 After=network.target
 [Service]
-Type=simple
+Type=forking
 ExecStart=/usr/local/sbin/mesh-micro.sh
 ExecStop=/usr/local/sbin/mesh-micro.sh stop
 Restart=on-failure
