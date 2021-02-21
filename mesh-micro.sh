@@ -1,12 +1,13 @@
 #!/bin/sh
+# A simple self contained wrapper around batctl
 
 # Defaults and items from the config
 ssid=my_mesh
 channel=2
 wifi_interface=
 internet_interface=
-type=
-bat_network=192.168.200.1
+mesh_type=
+mesh_network=192.168.200.1
 
 # Exec config file if exists
 if [ -f /etc/mesh-micro.conf ]; then
@@ -29,7 +30,7 @@ batctl if add $wifi_interface
 }
 
 # Client - No interconnection. Get it from BAT0
-client()
+mesh_client()
 {
 echo "Acting as Client"
 mesh_wifi_interface
@@ -42,18 +43,16 @@ dhclient bat0
 # DNS Masq
 dns_masq()
 {
-# sudo dnsmasq --interface=bat0 --dhcp-option=3,$bat_network --dhcp-range=${bat_network}00,${bat_network}99,255.255.255.0,24h
+# sudo dnsmasq --interface=bat0 --dhcp-option=3,$mesh_network --dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h
 echo "No DHCP detected. Starting DNSMasq."
 echo "interface=bat0
-dhcp-option=3,$bat_network
-dhcp-range=${bat_network}00,${bat_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
-#echo "dhcp-option=3,$bat_network" >> /etc/dnsmasq.d/mesh-micro.conf
-#echo "dhcp-range=${bat_network}00,${bat_network}99,255.255.255.0,24h" >> /etc/dnsmasq.d/mesh-micro.conf
+dhcp-option=3,$mesh_network
+dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
 systemctl start dnsmasq.service
 }
 
 # Server - Act as a DHCP Server and forward packets
-server()
+mesh_server()
 {
 echo "Acting as Server"
 mesh_wifi_interface
@@ -70,11 +69,19 @@ iptables -A FORWARD -i bat0 -o $internet_interface -j ACCEPT
 sleep 5
 if [ `dhclient -v bat0 2>&1 | grep "No working leases" | wc -l` -eq 1 ]; then
    dhclient -r
-   ip addr add $bat_network/24 dev bat0
+   ip addr add $mesh_network/24 dev bat0
    dns_masq
 fi
 }
 
+stop()
+{
+default_interfaces
+sudo ip link set $wifi_interface down
+}
+
+default_interfaces()
+{
 # Wait for wifi
 while [ -z "$wifi_interface" -o ! -e /sys/class/net/$wifi_interface ]; do
    echo "Sleeping 5 for Wifi Interface $wifi_interface"
@@ -87,18 +94,67 @@ done
 if [ -z $internet_interface ]; then
    internet_interface=`ls -1 /sys/class/net/ | grep '^e' | head -n 1`
 fi
+}
 
+mesh()
+{
+default_interfaces
 # If internet connection, server
-if [ -z $type ]; then
+if [ -z $mesh_type ]; then
    if [ `ping -c 1 -q 8.8.8.8 -I $internet_interface | grep "1 received" | wc -l` -eq 1 ]; then
-      type='server'
+      mesh_type='server'
    else
-      type='client'
+      mesh_type='client'
    fi
 fi
 
-if [ $type = 'server' ]; then
-   server
+if [ $mesh_type = 'server' ]; then
+   mesh_server
 else
-   client
+   mesh_client
+fi
+}
+
+install()
+{
+# Install deps, but make sure dnsmasq is off
+sudo apt-get install batctl dnsmasq iw
+sudo systemctl disable dnsmasq.service
+sudo systemctl stop dnsmasq.service
+
+sudo cp $0 /usr/local/sbin/
+
+sudo sh -c '( echo "[Unit]
+Description=Mesh Micro Service
+After=network.target
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/mesh-micro.sh
+ExecStop=/usr/local/sbin/mesh-micro.sh stop
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target" > /etc/systemd/system/mesh_micro.service )'
+
+sudo systemctl daemon-reload
+sudo systemctl enable mesh_micro.service
+sudo systemctl start mesh_micro.service
+}
+
+uninstall()
+{
+sudo systemctl stop mesh_micro.service
+sudo systemctl disable mesh_micro.service
+sudo rm /etc/systemd/system/mesh_micro.service
+sudo rm /usr/local/sbin/mesh-micro.sh
+sudo rm /etc/dnsmasq.d/mesh-micro.conf
+}
+
+if [ $1 -a $1 = 'stop' ]; then
+   stop
+elif [ $1 -a $1 = 'install' ]; then
+   install
+elif [ $1 -a $1 = 'uninstall' ]; then
+   uninstall
+else
+   mesh
 fi
