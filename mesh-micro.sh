@@ -141,16 +141,16 @@ sudo sh -c '( echo "[Unit]
 Description=Mesh Micro Service
 After=network.target
 [Service]
-Type=forking
+Type=simple
 ExecStart=/usr/local/sbin/mesh-micro.sh
 ExecStop=/usr/local/sbin/mesh-micro.sh stop
 Restart=on-failure
+RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target" > /etc/systemd/system/mesh_micro.service )'
 
 sudo systemctl daemon-reload
 sudo systemctl enable mesh_micro.service
-sudo systemctl start mesh_micro.service
 }
 
 uninstall()
