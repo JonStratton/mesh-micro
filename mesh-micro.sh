@@ -41,13 +41,14 @@ dhclient bat0
 }
 
 # DNS Masq
-#dns_masq()
-#{
-#echo "interface=bat0
-#dhcp-option=3,$mesh_network
-#dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
-#systemctl start dnsmasq.service
-#}
+dns_masq()
+{
+#dnsmasq --interface=bat0 --dhcp-option=3,$mesh_network --dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h
+echo "interface=bat0
+dhcp-option=3,$mesh_network
+dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
+systemctl start dnsmasq.service
+}
 
 # Server - Act as a DHCP Server and forward packets
 mesh_server()
@@ -69,8 +70,7 @@ if [ `dhclient -v bat0 2>&1 | grep "No working leases" | wc -l` -eq 1 ]; then
    echo "No DHCP detected. Starting DNSMasq."
    dhclient -r
    ip addr add $mesh_network/24 dev bat0
-   dnsmasq --interface=bat0 --dhcp-option=3,$mesh_network --dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h
-   #dns_masq
+   dns_masq
 fi
 }
 
