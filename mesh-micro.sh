@@ -37,17 +37,11 @@ mesh_wifi_interface
 batctl gw_mode client
 ip link set bat0 up
 
-dhclient bat0
-}
+# Make sure DNSMasq is off for bat0
+rm /etc/dnsmasq.d/mesh-micro.conf
+systemctl restart dnsmasq.service
 
-# DNS Masq
-dns_masq()
-{
-#dnsmasq --interface=bat0 --dhcp-option=3,$mesh_network --dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h
-echo "interface=bat0
-dhcp-option=3,$mesh_network
-dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
-systemctl start dnsmasq.service
+dhclient bat0
 }
 
 # Server - Act as a DHCP Server and forward packets
@@ -65,13 +59,16 @@ iptables -A FORWARD -i $internet_interface -o bat0 -m conntrack --ctstate RELATE
 iptables -A FORWARD -i bat0 -o $internet_interface -j ACCEPT
 
 # If no dhcp server on bat0... its up to us.
-sleep 5
+rm /etc/dnsmasq.d/mesh-micro.conf
 if [ `dhclient -v bat0 2>&1 | grep "No working leases" | wc -l` -eq 1 ]; then
    echo "No DHCP detected. Starting DNSMasq."
-   dhclient -r
    ip addr add $mesh_network/24 dev bat0
-   dns_masq
+
+   echo "interface=bat0
+   dhcp-option=3,$mesh_network
+   dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
 fi
+systemctl restart dnsmasq.service
 }
 
 stop()
@@ -132,8 +129,6 @@ install()
 {
 # Install deps, but make sure dnsmasq is off
 sudo apt-get install batctl dnsmasq iw
-sudo systemctl disable dnsmasq.service
-sudo systemctl stop dnsmasq.service
 
 sudo cp $0 /usr/local/sbin/
 
