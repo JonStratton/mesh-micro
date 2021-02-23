@@ -1,4 +1,5 @@
 #!/bin/sh
+# https://github.com/JonStratton/mesh-micro
 # A simple self contained wrapper around batctl
 
 # Defaults and items from the config
