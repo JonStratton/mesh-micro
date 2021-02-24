@@ -137,10 +137,9 @@ sudo sh -c '( echo "[Unit]
 Description=Mesh Micro Service
 After=network.target
 [Service]
-Type=simple
+Type=oneshot
 ExecStart=/usr/local/sbin/mesh-micro.sh
 ExecStop=/usr/local/sbin/mesh-micro.sh stop
-Restart=on-failure
 RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target" > /etc/systemd/system/mesh_micro.service )'
