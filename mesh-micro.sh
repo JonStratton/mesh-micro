@@ -24,7 +24,7 @@ ip link set $wifi_interface down
 ip link set mtu 1532 dev $wifi_interface
 iw $wifi_interface set type ibss
 ip link set $wifi_interface up
-iw $wifi_interface ibss join $ssid $frequency HT20
+iw $wifi_interface ibss join $ssid $frequency
 batctl if destroy
 batctl if add $wifi_interface
 }
@@ -38,7 +38,9 @@ batctl gw_mode client
 ip link set bat0 up
 
 # Make sure DNSMasq is off for bat0
-rm /etc/dnsmasq.d/mesh-micro.conf
+if [ -f /etc/dnsmasq.d/mesh-micro.conf ]; then
+   rm /etc/dnsmasq.d/mesh-micro.conf
+fi
 systemctl restart dnsmasq.service
 
 dhclient bat0
@@ -145,7 +147,7 @@ RemainAfterExit=yes
 WantedBy=multi-user.target" > /etc/systemd/system/mesh_micro.service )'
 
 sudo systemctl daemon-reload
-sudo systemctl enable mesh_micro.service
+#sudo systemctl enable mesh_micro.service
 }
 
 uninstall()
