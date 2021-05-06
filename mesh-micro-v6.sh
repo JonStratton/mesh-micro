@@ -117,8 +117,8 @@ Description=Mesh Micro Service
 After=network.target
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/mesh-micro.sh
-ExecStop=/usr/local/sbin/mesh-micro.sh stop
+ExecStart=/usr/local/sbin/mesh-micro-v6.sh
+ExecStop=/usr/local/sbin/mesh-micro-v6.sh stop
 RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target" > /etc/systemd/system/mesh_micro.service )'
@@ -132,7 +132,7 @@ uninstall()
 sudo systemctl stop mesh_micro.service
 sudo systemctl disable mesh_micro.service
 sudo rm /etc/systemd/system/mesh_micro.service
-sudo rm /usr/local/sbin/mesh-micro.sh
+sudo rm /usr/local/sbin/mesh-micro-v6.sh
 }
 
 if [ $1 -a $1 = 'stop' ]; then
