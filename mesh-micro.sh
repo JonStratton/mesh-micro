@@ -114,7 +114,7 @@ mesh()
 default_interfaces
 # If internet connection, server
 if [ -z $mesh_type ]; then
-   if [ `ping -c 1 -q 8.8.8.8 -I $internet_interface | grep "1 received" | wc -l` -eq 1 ]; then
+   if [ ! -z $internet_interface ] && [ `ping -c 1 -q 8.8.8.8 -I $internet_interface | grep "1 received" | wc -l` -eq 1 ]; then
       mesh_type='server'
    else
       mesh_type='client'
