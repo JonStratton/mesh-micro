@@ -131,7 +131,7 @@ fi
 install()
 {
 # Install deps, but make sure dnsmasq is off
-sudo apt-get install batctl dnsmasq iw
+sudo apt-get install batctl dnsmasq iw iptables
 
 sudo cp $0 /usr/local/sbin/
 

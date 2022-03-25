@@ -108,7 +108,7 @@ fi
 
 install()
 {
-sudo apt-get install batctl iw
+sudo apt-get install batctl iw iptables
 
 sudo cp $0 /usr/local/sbin/
 
