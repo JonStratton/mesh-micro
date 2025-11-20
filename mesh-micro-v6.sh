@@ -124,7 +124,6 @@ RemainAfterExit=yes
 WantedBy=multi-user.target" > /etc/systemd/system/mesh_micro.service )'
 
 sudo systemctl daemon-reload
-#sudo systemctl enable mesh_micro.service
 }
 
 uninstall()

@@ -82,14 +82,6 @@ sudo ip link set $wifi_interface down
 
 default_interfaces()
 {
-# Defaults and items from the config
-ssid=my_mesh
-channel=2
-wifi_interface=
-internet_interface=
-mesh_type=
-mesh_network=192.168.200.1
-
 # Exec config file if exists
 if [ -f /etc/mesh-micro.conf ]; then
    . /etc/mesh-micro.conf
@@ -147,7 +139,6 @@ RemainAfterExit=yes
 WantedBy=multi-user.target" > /etc/systemd/system/mesh_micro.service )'
 
 sudo systemctl daemon-reload
-#sudo systemctl enable mesh_micro.service
 }
 
 uninstall()
