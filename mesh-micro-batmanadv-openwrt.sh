@@ -4,16 +4,15 @@
 
 # Defaults and items from the config
 ssid=my_mesh
-channel=2
+channel=1
 
 install()
 {
 opkg update
-opkg install batctl-full
-opkg install kmod-batman-adv
+opkg install batctl-full kmod-batman-adv luci-proto-batman-adv
 
-if [ ! -f /etc/config/wireless_premeshmicro ]; then
-   cp /etc/config/wireless /etc/config/wireless_premeshmicro
+if [ ! -f /etc/config/wireless_prebatmanadv ]; then
+   cp /etc/config/wireless /etc/config/wireless_prebatmanadv
 fi
 uci set wireless.radio0.channel=$channel
 uci delete wireless.radio0.disabled
@@ -28,8 +27,8 @@ uci set wireless.mesh0.network='nwi_mesh0'
 uci set wireless.mesh0.ifname='mesh0'
 uci commit wireless
 
-if [ ! -f /etc/config/network_premeshmicro ]; then
-   cp /etc/config/network /etc/config/network_premeshmicro
+if [ ! -f /etc/config/network_prebatmanadv ]; then
+   cp /etc/config/network /etc/config/network_prebatmanadv
 fi
 uci add network interface
 uci rename network.@interface[-1]=bat0
@@ -47,7 +46,7 @@ uci set network.bat0_wan.proto='dhcp'
 uci commit network
 
 if [ ! -f /etc/config/firewall_premeshmicro ]; then
-   cp /etc/config/firewall /etc/config/firewall_premeshmicro
+   cp /etc/config/firewall /etc/config/firewall_prebatmanadv
 fi
 uci add_list firewall.@zone[1].network='bat0_wan'
 uci commit firewall
@@ -55,24 +54,17 @@ uci commit firewall
 
 uninstall()
 {
-if [ -f /etc/config/network_premeshmicro ]; then
-   mv /etc/config/wireless_premeshmicro /etc/config/wireless
-   mv /etc/config/network_premeshmicro /etc/config/network
-   mv /etc/config/firewall_premeshmicro /etc/config/firewall
+if [ -f /etc/config/network_prebatmanadv ]; then
+   mv /etc/config/wireless_prebatmanadv /etc/config/wireless
+   mv /etc/config/network_prebatmanadv /etc/config/network
+   mv /etc/config/firewall_prebatmanadv /etc/config/firewall
 fi
 
-opkg remove batctl-full
-opkg remove kmod-batman-adv
+opkg remove batctl-full kmod-batman-adv luci-proto-batman-adv
 }
 
-if [ $1 -a $1 = 'install' ]; then
-   install
-elif [ $1 -a $1 = 'uninstall' ]; then
+if [ $1 -a $1 = 'uninstall' ]; then
    uninstall
 else
-   echo "No"
-fi
-
-if [ ! -f /etc/passwd ]; then
-   echo "Exists"
+   install
 fi
