@@ -10,16 +10,24 @@ if [ `opkg list | grep yggdrasil | wc -l` -lt 1 ]; then
 fi
 
 # Get some keys to use
-# yggdrasil -genconf
+basename=`basename $0`
+tmp=/tmp/${basename}_$$
+touch ${tmp}
+chmod 700 ${tmp}
+yggdrasil -genconf >> ${tmp}
+private_key=`grep PrivateKey ${tmp} | cut -d':' -f2 | cut -d' ' -f2`
+public_key=`yggdrasil -publickey -useconffile ${tmp}`
+rm ${tmp}
 
+# Gen configs
 if [ ! -f /etc/config/network_yggdrasil ]; then
    cp /etc/config/network /etc/config/network_preyggdrasil
 fi
 uci add network interface
 uci rename network.@interface[-1]=ygg0
 uci set network.ygg0.proto='yggdrasil'
-uci set network.ygg0.private_key='TODO1'
-uci set network.ygg0.public_key='TODO2'
+uci set network.ygg0.private_key=$private_key
+uci set network.ygg0.public_key=$public_key
 uci set network.ygg0.jumper_enable='0'
 uci set network.ygg0.jumper_loglevel='info'
 uci set network.ygg0.allocate_listen_addresses='1'
