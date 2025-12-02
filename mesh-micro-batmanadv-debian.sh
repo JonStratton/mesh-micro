@@ -67,7 +67,8 @@ if [ `dhclient -v bat0 2>&1 | grep "No working leases" | wc -l` -eq 1 ]; then
    echo "No DHCP detected. Starting DNSMasq."
    ip addr add $mesh_network/24 dev bat0
 
-   echo "interface=bat0
+   echo "bind-interfaces
+interface=bat0
    dhcp-option=3,$mesh_network
    dhcp-range=${mesh_network}00,${mesh_network}99,255.255.255.0,24h" > /etc/dnsmasq.d/mesh-micro.conf
 fi
@@ -132,8 +133,8 @@ Description=Mesh Micro Service
 After=network.target
 [Service]
 Type=oneshot
-ExecStart=/usr/local/sbin/mesh-micro.sh
-ExecStop=/usr/local/sbin/mesh-micro.sh stop
+ExecStart=/usr/local/sbin/mesh-micro-batmanadv-debian.sh
+ExecStop=/usr/local/sbin/mesh-micro-batmanadv-debian.sh stop
 RemainAfterExit=yes
 [Install]
 WantedBy=multi-user.target" > /etc/systemd/system/mesh_micro.service )'
@@ -146,7 +147,7 @@ uninstall()
 sudo systemctl stop mesh_micro.service
 sudo systemctl disable mesh_micro.service
 sudo rm /etc/systemd/system/mesh_micro.service
-sudo rm /usr/local/sbin/mesh-micro.sh
+sudo rm /usr/local/sbin/mesh-micro-batmanadv-debian.sh
 sudo rm /etc/dnsmasq.d/mesh-micro.conf
 }
 
