@@ -8,6 +8,14 @@ channel=1
 
 install()
 {
+if [ $1 ]; then
+   ssid=$1
+fi
+
+if [ $2 ]; then
+   channel=$2
+fi
+
 opkg update
 opkg install batctl-full kmod-batman-adv luci-proto-batman-adv
 
@@ -66,5 +74,5 @@ opkg remove batctl-full kmod-batman-adv luci-proto-batman-adv
 if [ $1 -a $1 = 'uninstall' ]; then
    uninstall
 else
-   install
+   install $2 $3
 fi
