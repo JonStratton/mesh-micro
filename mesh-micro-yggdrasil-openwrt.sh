@@ -38,19 +38,24 @@ uci set network.@yggdrasil_ygg0_interface[0].interface='br-lan'
 uci set network.@yggdrasil_ygg0_interface[0].beacon='1'
 uci set network.@yggdrasil_ygg0_interface[0].listen='1'
 
-uci add network yggdrasil_ygg0_peer
-uci set network.@yggdrasil_ygg0_peer[-1].address='TODO3'
-
-uci add network yggdrasil_ygg0_peer
-uci set network.@yggdrasil_ygg0_peer[-1].address='TODO3'
-
 uci commit network
+
+peer $2
 
 if [ ! -f /etc/config/firewall_yggdrasil ]; then
    cp /etc/config/firewall /etc/config/firewall_preyggdrasil
 fi
 uci add_list firewall.@zone[1].network='ygg0'
 uci commit firewall
+}
+
+peer()
+{
+if [ $1 ]; then
+   uci add network yggdrasil_ygg0_peer
+   uci set network.@yggdrasil_ygg0_peer[-1].address=$1
+   uci commit network
+fi
 }
 
 uninstall()
@@ -63,11 +68,10 @@ fi
 opkg remove yggdrasil luci-proto-yggdrasil
 }
 
-echo "Work In Progess. Exiting";
-exit;
-
 if [ $1 -a $1 = 'uninstall' ]; then
    uninstall
+elif [ $1 -a $1 = 'peer' ]; then
+   peer $2
 else
    install
 fi
