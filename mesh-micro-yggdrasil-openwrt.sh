@@ -4,7 +4,7 @@
 
 install()
 {
-if [ `opkg list | grep yggdrasil | wc -l` -lt 1 ]; then
+if [ `opkg list-installed | grep yggdrasil | wc -l` -lt 1 ]; then
    opkg update
    opkg install yggdrasil luci-proto-yggdrasil
 fi
@@ -40,7 +40,7 @@ uci set network.@yggdrasil_ygg0_interface[0].listen='1'
 
 uci commit network
 
-peer $2
+peer $1
 
 if [ ! -f /etc/config/firewall_yggdrasil ]; then
    cp /etc/config/firewall /etc/config/firewall_preyggdrasil
@@ -65,7 +65,7 @@ if [ -f /etc/config/network_preyggdrasil ]; then
    mv /etc/config/firewall_preyggdrasil /etc/config/firewall
 fi
 
-opkg remove yggdrasil luci-proto-yggdrasil
+opkg remove yggdrasil luci-proto-yggdrasil --force-depends
 }
 
 if [ $1 -a $1 = 'uninstall' ]; then
@@ -73,5 +73,5 @@ if [ $1 -a $1 = 'uninstall' ]; then
 elif [ $1 -a $1 = 'peer' ]; then
    peer $2
 else
-   install
+   install $2
 fi

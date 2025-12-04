@@ -1,7 +1,7 @@
 #!/bin/sh
 # https://openwrt.org/docs/guide-user/additional-software/extroot_configuration
 
-if [ `opkg list | grep kmod-usb-storage | wc -l` -lt 1 ]; then
+if [ `opkg list-installed | grep kmod-usb-storage | wc -l` -lt 1 ]; then
    opkg update
    opkg install block-mount kmod-fs-ext4 e2fsprogs parted kmod-usb-storage
 fi
