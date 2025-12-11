@@ -1,4 +1,6 @@
 # mesh-micro
+This project has moved. To get the latest version, pull from https://codeberg.org/JonStratton/mesh-micro
+
 This script is a minimal wrapper around batctl. Its goal is to be self contained, and to install cleanly. To Install dependencies
 
 	sudo ./mesh-micro.sh install
